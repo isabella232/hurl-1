@@ -4,8 +4,8 @@ require 'couchrest'
 module Hurl
   class DB
     def self.couch
-      @couch_url ||= ENV['COUCH_URL'] || ENV['CLOUDANT_URL']
-      @couch ||= CouchRest.database(@couch_url) if @couch_url
+      @couch_url ||= "#{ENV['CLOUDANT_URL']}/hurl"
+      @couch ||= CouchRest.database!(@couch_url) if @couch_url
     end
 
     def self.find(scope, id)
