@@ -7,7 +7,6 @@ gem 'curb',      '~>0.7.8'
 gem 'coderay',   '~>0.8.357'
 gem 'ruby-debug'
 
-
 group :test do
   gem 'shotgun'
 end

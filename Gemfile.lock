@@ -3,6 +3,10 @@ GEM
   specs:
     coderay (0.8.357)
     columnize (0.3.6)
+    couchrest (1.0.1)
+      json (>= 1.4.6)
+      mime-types (>= 1.15)
+      rest-client (>= 1.5.1)
     curb (0.7.8)
     linecache (0.46)
       rbx-require-relative (> 0.0.4)
@@ -27,6 +31,7 @@ PLATFORMS
 
 DEPENDENCIES
   coderay (~> 0.8.357)
+  couchrest (~> 1.0)
   curb (~> 0.7.8)
   mustache (~> 0.11.2)
   ruby-debug
