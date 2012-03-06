@@ -8,9 +8,11 @@ GEM
       rest-client (>= 1.5.1)
     curb (0.7.8)
     json (1.6.5)
+    kgio (2.6.0)
     mime-types (1.17.2)
     mustache (0.11.2)
     rack (1.2.1)
+    raindrops (0.7.0)
     rest-client (1.6.7)
       mime-types (>= 1.16)
     shotgun (0.8)
@@ -19,6 +21,10 @@ GEM
       rack (~> 1.1)
       tilt (~> 1.1)
     tilt (1.1)
+    unicorn (4.2.0)
+      kgio (~> 2.6)
+      rack
+      raindrops (~> 0.7)
     yajl-ruby (1.1.0)
 
 PLATFORMS
@@ -31,4 +37,5 @@ DEPENDENCIES
   mustache (~> 0.11.2)
   shotgun
   sinatra (~> 1.0)
+  unicorn
   yajl-ruby (~> 1.1.0)

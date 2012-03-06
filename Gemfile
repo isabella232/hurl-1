@@ -10,3 +10,7 @@ gem 'couchrest', '~>1.0'
 group :test do
   gem 'shotgun'
 end
+
+group :production do
+  gem 'unicorn'
+end
