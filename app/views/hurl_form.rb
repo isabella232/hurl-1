@@ -1,5 +1,5 @@
 module Views
-  class Index < Layout
+  class HurlForm < Layout
     def previous_hurl
       if prev = prev_hurl
         [ :hurl => prev.to_s ]
@@ -14,17 +14,6 @@ module Views
 
     def help_blurb_hidden?
       !@hurl.empty?
-    end
-
-    def try_it_hidden?
-      not @hurl.empty?
-    end
-
-    def default_hurls
-      super.sort.map do |name, params|
-        dname = name.downcase
-        { :name => name, :sha => sha(params), :class => dname.split(' ')[0] }
-      end
     end
 
     def hide_request_and_response?

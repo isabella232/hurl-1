@@ -2,3 +2,6 @@ db/
 .bundle/
 bin/
 .rvmrc
+.powenv
+tmp/**/*
+tmp/*

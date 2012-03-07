@@ -9,7 +9,9 @@ Now Hurl is an open source project for your enjoyment.
 This Fork
 ---------
 
-I forked hurl to work on Heroku & CouchDB.
+* [benatkin](https;//github.com/benatkin) forked hurl to work on Heroku & CouchDB.
+* [localtoast](https;//github.com/localtoast) forked it to make it single user.
+* [brianjlandau](https;//github.com/brianjlandau) changed some of the copy & removed the examples and added HTTP Basic auth for creating and deleting hurls.
 
 Installation
 ------------
@@ -40,22 +42,13 @@ Run On Heroku & CouchDB
 First get a CouchDB database and get the url, including auth. I got my
 DB from [Cloudant](https://cloudant.com/).
 
-    heroku create
-    heroku rename my-clever-name
-    heroku config:add 'COUCH_URL=https://bat:password@bat.cloudant.com/benhurl/'
+    git clone git://github.com/vigetlabs/hurl.git
+    cd hurl
+    heroku create my-clever-name --stack cedar
+    heroku addons:add cloudant:oxygen
+    git push heroku master
 
-Now you can go to [http://my-clever-name.heroku.com/](http://my-clever-name.heroku.com/)
-
-To enable github login, register a github app with the callback `http://my-clever-name.heroku.com/login/callback/` and add your configuration:
-
-    heroku config:add 'HURL_CLIENT_ID=your_client_id'
-    heroku config:add 'HURL_SECRET=your_secret'
-
-Issues
-------
-
-Find a bug? Want a feature? Submit an [issue
-here](http://github.com/defunkt/hurl/issues). Patches welcome!
+Now you can go to [http://my-clever-name.herokuapp.com/](http://my-clever-name.herokuapp.com/)
 
 
 Screenshot

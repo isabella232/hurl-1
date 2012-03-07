@@ -9,12 +9,11 @@ require 'digest'
 require 'zlib'
 require "rexml/document"
 
+require 'rubygems'
+require 'bundler/setup'
+
 # bundled gems
-require 'sinatra/base'
-require 'yajl'
-require 'curb'
-require 'mustache/sinatra'
-require 'coderay'
+Bundler.require(:default, RACK_ENV)
 
 $LOAD_PATH.unshift File.expand_path(File.dirname(__FILE__))
 

@@ -20,6 +20,8 @@ GEM
     sinatra (1.1.0)
       rack (~> 1.1)
       tilt (~> 1.1)
+    sinatra-basic-auth (0.1.0)
+      sinatra
     tilt (1.1)
     unicorn (4.2.0)
       kgio (~> 2.6)
@@ -37,5 +39,6 @@ DEPENDENCIES
   mustache (~> 0.11.2)
   shotgun
   sinatra (~> 1.0)
+  sinatra-basic-auth
   unicorn
   yajl-ruby (~> 1.1.0)

@@ -3,6 +3,7 @@ require 'app/libraries'
 module Hurl
   class App < Sinatra::Base
     register Mustache::Sinatra
+    register Sinatra::BasicAuth
     helpers Hurl::Helpers
 
     dir = File.dirname(File.expand_path(__FILE__))
@@ -23,9 +24,11 @@ module Hurl
     def initialize(*args)
       super
       @debug = ENV['DEBUG']
-      setup_default_hurls
     end
 
+    authorize do |username, password|
+      username == ENV['BASIC_AUTH_USERNAME'] && password == ENV['BASIC_AUTH_PASSWORD']
+    end
 
     #
     # routes
@@ -37,49 +40,42 @@ module Hurl
     end
 
     get '/' do
-      @hurl = params
-      mustache :index
-    end
-
-    get '/hurls/?' do
       @hurls = @user.hurls
       mustache :hurls
+    end
+    
+    protect do
+      get '/hurls/new/?' do
+        @hurl = params
+        mustache :hurl_form
+      end
     end
 
     get '/hurls/:id/?' do
       @hurl = find_hurl(params[:id])
       @view = find_view(params[:id])
-      @hurl ? mustache(:index) : not_found
+      @hurl ? mustache(:hurl_form) : not_found
     end
-
-    delete '/hurls/:id/?' do
-
-      if @hurl = find_hurl(params[:id])
-        @user.remove_hurl(@hurl['id'])
+    
+    protect do
+      delete '/hurls/:id/?' do
+        if @hurl = find_hurl(params[:id])
+          @user.remove_hurl(@hurl['id'])
+        end
+        request.xhr? ? "ok" : redirect('/')
       end
-      request.xhr? ? "ok" : redirect('/')
     end
 
     get '/hurls/:id/:view_id/?' do
       @hurl = find_hurl(params[:id])
       @view = find_view(params[:view_id])
       @view_id = params[:view_id]
-      @hurl && @view ? mustache(:index) : not_found
+      @hurl && @view ? mustache(:hurl_form) : not_found
     end
 
     get '/views/:id/?' do
       @view = find_view(params[:id])
       @view ? mustache(:view, :layout => false) : not_found
-    end
-
-    get '/test.json' do
-      content_type 'application/json'
-      File.read('test/json')
-    end
-
-    get '/test.xml' do
-      content_type 'application/xml'
-      File.read('test/xml')
     end
 
     get '/about/?' do
@@ -90,68 +86,70 @@ module Hurl
       mustache :stats
     end
 
-    post '/' do
-      return json(:error => "Calm down and try my margarita! (rate limited)") if rate_limited?
+    protect do
+      post '/' do
+        return json(:error => "Calm down and try my margarita! (rate limited)") if rate_limited?
 
-      url, method, auth = params.values_at(:url, :method, :auth)
+        url, method, auth = params.values_at(:url, :method, :auth)
 
-      return json(:error => "That's... wait.. what?! (invalid URL)") if invalid_url?(url)
+        return json(:error => "That's... wait.. what?! (invalid URL)") if invalid_url?(url)
 
-      curl = Curl::Easy.new(url)
+        curl = Curl::Easy.new(url)
 
-      sent_headers = []
-      curl.on_debug do |type, data|
-        # track request headers
-        sent_headers << data if type == Curl::CURLINFO_HEADER_OUT
-      end
+        sent_headers = []
+        curl.on_debug do |type, data|
+          # track request headers
+          sent_headers << data if type == Curl::CURLINFO_HEADER_OUT
+        end
 
-      curl.follow_location = true if params[:follow_redirects]
+        curl.follow_location = true if params[:follow_redirects]
 
-      # ensure a method is set
-      method = (method.to_s.empty? ? 'GET' : method).upcase
+        # ensure a method is set
+        method = (method.to_s.empty? ? 'GET' : method).upcase
 
-      # update auth
-      add_auth(auth, curl, params)
+        # update auth
+        add_auth(auth, curl, params)
 
-      # arbitrary headers
-      add_headers_from_arrays(curl, params["header-keys"], params["header-vals"])
+        # arbitrary headers
+        add_headers_from_arrays(curl, params["header-keys"], params["header-vals"])
 
-      # arbitrary post params
-      if params['post-body'] && ['POST', 'PUT'].index(method)
-        post_data = [params['post-body']]
-      else
-        post_data = make_fields(method, params["param-keys"], params["param-vals"])
-      end
-
-      begin
-        debug { puts "#{method} #{url}" }
-
-        if method == 'PUT'
-          curl.http_put(stringify_data(post_data))
+        # arbitrary post params
+        if params['post-body'] && ['POST', 'PUT'].index(method)
+          post_data = [params['post-body']]
         else
-          curl.send("http_#{method.downcase}", *post_data)
+          post_data = make_fields(method, params["param-keys"], params["param-vals"])
         end
 
-        debug do
-          puts sent_headers.join("\n")
-          puts post_data.join('&') if post_data.any?
-          puts curl.header_str
+        begin
+          debug { puts "#{method} #{url}" }
+
+          if method == 'PUT'
+            curl.http_put(stringify_data(post_data))
+          else
+            curl.send("http_#{method.downcase}", *post_data)
+          end
+
+          debug do
+            puts sent_headers.join("\n")
+            puts post_data.join('&') if post_data.any?
+            puts curl.header_str
+          end
+
+          header  = pretty_print_headers(curl.header_str)
+          type    = url =~ /(\.js)$/ ? 'js' : curl.content_type
+          body    = pretty_print(type, curl.body_str)
+          request = pretty_print_requests(sent_headers, post_data)
+
+          hurl_id = save_hurl(params)
+          json :header    => header,
+               :body      => body,
+               :request   => request,
+               :hurl_id   => hurl_id,
+               :prev_hurl => @user ? @user.second_to_last_hurl_id : nil,
+               :view_id   => save_view(hurl_id, header, body, request)
+        rescue => e
+          json :error => CGI::escapeHTML(e.to_s)
         end
-
-        header  = pretty_print_headers(curl.header_str)
-        type    = url =~ /(\.js)$/ ? 'js' : curl.content_type
-        body    = pretty_print(type, curl.body_str)
-        request = pretty_print_requests(sent_headers, post_data)
-
-        hurl_id = save_hurl(params)
-        json :header    => header,
-             :body      => body,
-             :request   => request,
-             :hurl_id   => hurl_id,
-             :prev_hurl => @user ? @user.second_to_last_hurl_id : nil,
-             :view_id   => save_view(hurl_id, header, body, request)
-      rescue => e
-        json :error => CGI::escapeHTML(e.to_s)
       end
     end
 
